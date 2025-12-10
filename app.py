@@ -16,40 +16,50 @@ except:
 # --- CONNECT TO DATABASE ---
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 1. Load the Cars (From the first sheet, usually 'Sheet1')
+# 1. Load Inventory (Sheet1)
 try:
-    # We specifically ask for Sheet1 for the cars
     data = conn.read(spreadsheet=SHEET_URL, worksheet="Sheet1", ttl=5)
     df = pd.DataFrame(data)
 except:
-    st.error("Error loading cars. Make sure your main sheet is named 'Sheet1'")
+    st.error("Error loading inventory. Check if 'Sheet1' exists.")
     st.stop()
 
-# 2. Load the Password (From the new 'Admin' sheet)
+# 2. Load Admin Credentials (Admin Sheet)
 try:
-    # We read the Admin tab to get the password
     admin_data = conn.read(spreadsheet=SHEET_URL, worksheet="Admin", ttl=5)
     df_admin = pd.DataFrame(admin_data)
-    # We grab the value from the first row of the 'Password' column
-    REAL_PASSWORD = str(df_admin['Password'].iloc[0])
+    # Ensure data is text so numbers don't break it
+    df_admin['Username'] = df_admin['Username'].astype(str)
+    df_admin['Password'] = df_admin['Password'].astype(str)
 except:
-    # If the Admin tab is missing, default to 1234 so the app doesn't crash
-    REAL_PASSWORD = "1234"
+    st.warning("Admin tab not found. Login disabled.")
+    df_admin = pd.DataFrame()
 
 # ==========================================
-# 🔐 ADMIN SIDEBAR
+# 🔐 ADMIN LOGIN (SIDEBAR)
 # ==========================================
 with st.sidebar:
-    st.header("🔐 Admin Access")
-    input_pass = st.text_input("Enter Password:", type="password")
+    st.header("🔐 Admin Login")
     
-    # Compare input with the Google Sheet password
-    if input_pass == REAL_PASSWORD:
-        st.success("Access Granted!")
-        st.write("Click below to edit Stock:")
-        st.link_button("📝 Edit Google Sheet", SHEET_URL)
-    elif input_pass:
-        st.error("Wrong Password")
+    # Inputs
+    user_input = st.text_input("Username")
+    pass_input = st.text_input("Password", type="password")
+    
+    if user_input and pass_input:
+        # Check if Username AND Password match a row in the Admin sheet
+        # We look for a row where BOTH columns match what you typed
+        match = df_admin[
+            (df_admin['Username'] == user_input) & 
+            (df_admin['Password'] == pass_input)
+        ]
+        
+        if not match.empty:
+            st.success(f"Welcome, {user_input}!")
+            st.write("---")
+            st.write("**Manage Inventory:**")
+            st.link_button("📝 Edit Google Sheet", SHEET_URL)
+        else:
+            st.error("Invalid Username or Password")
 
 # ==========================================
 # 🔍 SEARCH
@@ -71,10 +81,11 @@ if search_term:
                     
                     col1, col2, col3 = st.columns(3)
                     with col1:
-                        st.write(f"**Rating**\n{row.get('Rating', 'N/A')}")
+                        st.write(f"**⭐ Rating**\n{row.get('Rating', 'N/A')}")
                     with col2:
-                        st.write(f"**Price**\n{row.get('max price', 'N/A')}")
+                        st.write(f"**💰 Price**\n{row.get('max price', 'N/A')}")
                     with col3:
-                        st.write(f"**Stock**\n{row.get('Stock', 'N/A')}")
+                        stock = row.get('Stock', 'N/A')
+                        st.write(f"**📦 Stock**\n{stock}")
         else:
             st.warning("Car not found.")
