@@ -8,7 +8,7 @@ SHEET_ID = "1ifx_HY5UPumM8qcFaIuhQx2BonJzr2ZWGNQnbbfMS48"
 # 2. YOUR ADMIN TAB ID (GID)
 # Look at your browser URL when on the Admin tab. It says "#gid=12345".
 # Paste that number below inside the quotes.
-ADMIN_GID = "PASTE_ADMIN_GID_HERE" 
+ADMIN_GID = "0#gid=0" 
 
 # Construct the bulletproof CSV links
 MAIN_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
@@ -82,3 +82,4 @@ with st.sidebar:
                 st.error("Wrong Username or Password")
         except:
             st.error("Could not verify password. Check Admin GID.")
+
