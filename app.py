@@ -11,46 +11,47 @@ st.title("🔥 Hot Wheels Rater")
 # 1. Connect and Load Data
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
-    # We read the data from your specific link
     data = conn.read(spreadsheet=SHEET_URL, ttl=5)
     df = pd.DataFrame(data)
 except Exception as e:
-    st.error("Could not load the list. Make sure the Google Sheet link is correct!")
+    st.error("Could not load the list. Check your Google Sheet link!")
     st.stop()
 
-# 2. Search Tab
+# 2. Search Section
 st.header("🔍 Find a Car")
 search_term = st.text_input("Type car name:", placeholder="e.g. BMW").lower().strip()
 
 if search_term:
-    # Check if 'Car Name' exists (Crash-proof check)
+    # Check if 'Car Name' exists to prevent crashing
     if 'Car Name' not in df.columns:
-        st.error("Error: I can't find a column named 'Car Name' in your sheet.")
+        st.error("Error: I can't find a column named 'Car Name' in your sheet. Check row 1.")
     else:
-        # Search for the car
+        # Filter for the car
         results = df[df['Car Name'].astype(str).str.lower().str.contains(search_term, na=False)]
         
         if not results.empty:
             st.success(f"Found {len(results)} car(s):")
             for index, row in results.iterrows():
                 with st.container(border=True):
-                    # Display the Name
                     st.subheader(row['Car Name'])
                     
-                    # Display the Rating
-                    st.write(f"**⭐ Rating:** {row['Rating']}/10")
+                    # Create 3 columns for a clean look: Rating | Price | Stock
+                    col1, col2, col3 = st.columns(3)
                     
-                    # Display the Price (Looking for 'max price')
-                    # We use .get() so it doesn't crash if the column name is slightly different
-                    price = row.get('max price', 'N/A')
-                    st.write(f"**💰 Price:** {price}")
+                    with col1:
+                        # Looks for 'Rating' column
+                        rating = row.get('Rating', 'N/A')
+                        st.write(f"**⭐ Rating**\n{rating}")
+                    
+                    with col2:
+                        # Looks for 'max price' column
+                        price = row.get('max price', 'N/A')
+                        st.write(f"**💰 Price**\n{price}")
+                        
+                    with col3:
+                        # Looks for 'Stock' column
+                        stock = row.get('Stock', 'N/A')
+                        st.write(f"**📦 Stock**\n{stock}")
                     
         else:
             st.warning("Car not found.")
-
-st.divider()
-
-# 3. Add Button (Safe Mode)
-st.subheader("➕ Add a New Car")
-st.write("Click below to open the sheet and add a car manually:")
-st.link_button("Go to Google Sheet", SHEET_URL)
