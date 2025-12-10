@@ -5,8 +5,8 @@ import pandas as pd
 # --- DIRECT LINK TO YOUR SHEET ---
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1ifx_HY5UPumM8qcFaIuhQx2BonJzr2ZWGNQnbbfMS48/edit?usp=sharing"
 
-st.set_page_config(page_title="HW Rater", page_icon="🔥")
-st.title("🔥 Hot Wheels Rater")
+st.set_page_config(page_title="HW Rater", page_icon="🚘")
+st.title("🏎Hot Wheels Rater")
 
 # 1. Connect and Load Data
 try:
@@ -55,5 +55,6 @@ if search_term:
                     
         else:
             st.warning("Car not found.")
+
 
 
