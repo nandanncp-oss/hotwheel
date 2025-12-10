@@ -19,7 +19,7 @@ except Exception as e:
 
 # 2. Search Section
 st.header("🔍 Find a Car")
-search_term = st.text_input("Type car name:", placeholder="e.g. BMW").lower().strip()
+search_term = st.text_input("Type car name:", placeholder="Name a HotWheel").lower().strip()
 
 if search_term:
     # Check if 'Car Name' exists to prevent crashing
@@ -55,3 +55,4 @@ if search_term:
                     
         else:
             st.warning("Car not found.")
+
