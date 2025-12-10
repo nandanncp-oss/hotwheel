@@ -2,43 +2,55 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-# --- DIRECT LINK ---
+# --- DIRECT LINK TO YOUR SHEET ---
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1ifx_HY5UPumM8qcFaIuhQx2BonJzr2ZWGNQnbbfMS48/edit?usp=sharing"
 
 st.set_page_config(page_title="HW Rater", page_icon="🔥")
 st.title("🔥 Hot Wheels Rater")
 
-# 1. Connect (Read-Only Mode)
+# 1. Connect and Load Data
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
-    data = conn.read(spreadsheet=SHEET_URL, usecols=[0, 1, 2], ttl=5)
+    # We read the data from your specific link
+    data = conn.read(spreadsheet=SHEET_URL, ttl=5)
     df = pd.DataFrame(data)
 except Exception as e:
-    st.error("Error loading database.")
+    st.error("Could not load the list. Make sure the Google Sheet link is correct!")
     st.stop()
 
 # 2. Search Tab
-st.header("🔍 Find a Rating")
-search_term = st.text_input("Type car name:", placeholder="e.g. Bone Shaker").lower().strip()
+st.header("🔍 Find a Car")
+search_term = st.text_input("Type car name:", placeholder="e.g. BMW").lower().strip()
 
 if search_term:
-    # Filter data
-    results = df[df['Car Name'].astype(str).str.lower().str.contains(search_term, na=False)]
-    
-    if not results.empty:
-        st.success(f"Found {len(results)} car(s):")
-        for index, row in results.iterrows():
-            with st.container(border=True):
-                st.subheader(row['Car Name'])
-                st.write(f"**Rating:** {row['Rating']}/10")
-                st.write(f"**Notes:** {row['Notes']}")
+    # Check if 'Car Name' exists (Crash-proof check)
+    if 'Car Name' not in df.columns:
+        st.error("Error: I can't find a column named 'Car Name' in your sheet.")
     else:
-        st.warning("Car not found yet.")
+        # Search for the car
+        results = df[df['Car Name'].astype(str).str.lower().str.contains(search_term, na=False)]
+        
+        if not results.empty:
+            st.success(f"Found {len(results)} car(s):")
+            for index, row in results.iterrows():
+                with st.container(border=True):
+                    # Display the Name
+                    st.subheader(row['Car Name'])
+                    
+                    # Display the Rating
+                    st.write(f"**⭐ Rating:** {row['Rating']}/10")
+                    
+                    # Display the Price (Looking for 'max price')
+                    # We use .get() so it doesn't crash if the column name is slightly different
+                    price = row.get('max price', 'N/A')
+                    st.write(f"**💰 Price:** {price}")
+                    
+        else:
+            st.warning("Car not found.")
 
 st.divider()
 
 # 3. Add Button (Safe Mode)
-st.subheader("➕ Want to rate a new car?")
-st.write("Google requires manual entry for security.")
-# This button opens your Google Sheet in a new tab
-st.link_button("Go to Google Sheet to Add Car", SHEET_URL)
+st.subheader("➕ Add a New Car")
+st.write("Click below to open the sheet and add a car manually:")
+st.link_button("Go to Google Sheet", SHEET_URL)
