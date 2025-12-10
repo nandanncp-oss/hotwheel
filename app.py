@@ -2,28 +2,25 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
-# --- YOUR DATABASE LINK ---
-# We are putting the link right here to avoid the Secrets error
+# --- WE PUT THE LINK DIRECTLY HERE ---
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1ifx_HY5UPumM8qcFaIuhQx2BonJzr2ZWGNQnbbfMS48/edit?usp=sharing"
 
-# 1. Page Configuration
 st.set_page_config(page_title="HW Rater", page_icon="🔥")
 st.title("🔥 Hot Wheels Rater")
 
-# 2. Connect to Google Sheets
+# Connect to Google Sheets using the link directly
 try:
-    # We pass the URL directly to the connection!
     conn = st.connection("gsheets", type=GSheetsConnection)
+    # We use the variable SHEET_URL so it doesn't need Secrets
     data = conn.read(spreadsheet=SHEET_URL, usecols=[0, 1, 2], ttl=5)
     df = pd.DataFrame(data)
 except Exception as e:
-    st.error(f"Error connecting: {e}")
+    st.error(f"Error connecting to database: {e}")
     st.stop()
 
-# 3. Create Tabs
 tab1, tab2 = st.tabs(["🔍 Find Rating", "➕ Add New Car"])
 
-# --- TAB 1: FIND A CAR ---
+# --- SEARCH TAB ---
 with tab1:
     st.header("Check a Hot Wheel")
     search_term = st.text_input("Type car name:", placeholder="e.g. Bone Shaker").lower().strip()
@@ -38,9 +35,9 @@ with tab1:
                     st.write(f"**Rating:** {row['Rating']}/10")
                     st.write(f"**Notes:** {row['Notes']}")
         else:
-            st.warning("No rating found for this car.")
+            st.warning("No rating found. Check the spelling!")
 
-# --- TAB 2: ADD A RATING ---
+# --- ADD TAB ---
 with tab2:
     st.header("Rate a New Car")
     with st.form("rating_form"):
@@ -52,11 +49,11 @@ with tab2:
         
         if submitted and new_name:
             if new_name.lower() in df['Car Name'].astype(str).str.lower().values:
-                st.error("Car already exists!")
+                st.error("That car is already on the list!")
             else:
                 new_data = pd.DataFrame([{"Car Name": new_name, "Rating": new_rating, "Notes": new_note}])
                 updated_df = pd.concat([df, new_data], ignore_index=True)
-                # Update using the specific URL
+                # Update using the direct link
                 conn.update(spreadsheet=SHEET_URL, data=updated_df)
-                st.success("Saved!")
+                st.success("Saved! Refreshing...")
                 st.rerun()
